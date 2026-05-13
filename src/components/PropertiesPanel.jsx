@@ -1,5 +1,15 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
+
+function useIsMobile(breakpoint = 640) {
+  const [mobile, setMobile] = useState(() => window.innerWidth < breakpoint);
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < breakpoint);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, [breakpoint]);
+  return mobile;
+}
 
 const FONTS = [
   { value: 'sans-serif',             label: 'Sans-serif' },
@@ -17,22 +27,74 @@ export default function PropertiesPanel() {
   const seats       = useStore(s => s.seats);
   const updateSeat  = useStore(s => s.updateSeat);
   const deleteSeat  = useStore(s => s.deleteSeat);
+  const isMobile    = useIsMobile();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  if (mode === 'free' || selectedIds.length === 0) return null;
+  const hasSelection = mode !== 'free' && selectedIds.length > 0;
 
-  if (selectedIds.length > 1) {
+  // Close sheet when selection is cleared
+  useEffect(() => {
+    if (!hasSelection) setSheetOpen(false);
+  }, [hasSelection]);
+
+  if (!hasSelection) return null;
+
+  if (isMobile) {
     return (
-      <div style={p.panel}>
-        <h3 style={p.title}>Selection</h3>
-        <div style={p.meta}>{selectedIds.length} seats selected</div>
-        <p style={p.hint}>Use Group / Ungroup in the toolbar.</p>
-      </div>
+      <>
+        {/* Floating button — always visible when something is selected */}
+        {!sheetOpen && (
+          <button style={p.fab} onClick={() => setSheetOpen(true)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+            </svg>
+            Properties
+          </button>
+        )}
+
+        {/* Bottom sheet */}
+        {sheetOpen && (
+          <div style={p.mobileSheet}>
+            <div style={p.mobileHandle} />
+            <div style={p.mobileHeader}>
+              <span style={p.title}>Properties</span>
+              <button style={p.mobileClose} onClick={() => setSheetOpen(false)}>✕</button>
+            </div>
+            <div style={p.mobileBody}>
+              <PanelContent
+                selectedIds={selectedIds} seats={seats}
+                updateSeat={updateSeat} deleteSeat={deleteSeat}
+              />
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
+  return (
+    <div style={p.panel}>
+      <PanelContent
+        selectedIds={selectedIds} seats={seats}
+        updateSeat={updateSeat} deleteSeat={deleteSeat}
+      />
+    </div>
+  );
+}
+
+function PanelContent({ selectedIds, seats, updateSeat, deleteSeat }) {
+  if (selectedIds.length > 1) {
+    return (
+      <>
+        <h3 style={p.title}>Selection</h3>
+        <div style={p.meta}>{selectedIds.length} seats selected</div>
+        <p style={p.hint}>Use Group / Ungroup in the toolbar.</p>
+      </>
+    );
+  }
   const seat = seats.find(s => s.id === selectedIds[0]);
   if (!seat) return null;
-
   return <SingleSeatPanel seat={seat} updateSeat={updateSeat} deleteSeat={deleteSeat} />;
 }
 
@@ -57,7 +119,7 @@ function SingleSeatPanel({ seat, updateSeat, deleteSeat }) {
   }, [id, seat, updateSeat]);
 
   return (
-    <div style={p.panel}>
+    <>
       <div style={p.header}>
         <h3 style={p.title}>Properties</h3>
         <span style={p.badge}>{type}</span>
@@ -172,7 +234,7 @@ function SingleSeatPanel({ seat, updateSeat, deleteSeat }) {
       <button style={p.deleteBtn} onClick={() => deleteSeat(id)}>
         Delete Seat
       </button>
-    </div>
+    </>
   );
 }
 
@@ -246,6 +308,68 @@ const p = {
     gap: 10,
     overflowY: 'auto',
     flexShrink: 0,
+  },
+  // ── mobile floating button ───────────────────────────
+  fab: {
+    position: 'fixed',
+    bottom: 20,
+    right: 16,
+    zIndex: 500,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    padding: '10px 18px',
+    background: '#2563eb',
+    border: '1px solid #3b82f6',
+    borderRadius: 24,
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    boxShadow: '0 4px 16px rgba(37,99,235,0.5)',
+  },
+  // ── mobile bottom sheet ──────────────────────────────
+  mobileSheet: {
+    position: 'fixed',
+    left: 0, right: 0, bottom: 0,
+    zIndex: 500,
+    background: '#1e293b',
+    borderTop: '1px solid #475569',
+    borderRadius: '14px 14px 0 0',
+    maxHeight: '60vh',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+  },
+  mobileHandle: {
+    width: 36, height: 4,
+    background: '#475569',
+    borderRadius: 2,
+    margin: '8px auto 0',
+    flexShrink: 0,
+  },
+  mobileHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '8px 16px 6px',
+    flexShrink: 0,
+    borderBottom: '1px solid #334155',
+  },
+  mobileClose: {
+    background: 'none', border: 'none',
+    color: '#64748b', fontSize: 18,
+    cursor: 'pointer', padding: '2px 6px',
+    lineHeight: 1,
+  },
+  mobileBody: {
+    overflowY: 'auto',
+    padding: '10px 14px 24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    flex: 1,
   },
   header: {
     display: 'flex',

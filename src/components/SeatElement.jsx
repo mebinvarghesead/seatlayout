@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 const SEL_COLOR = '#f97316';
 const SEL_DASH  = '5 3';
 
-export default function SeatElement({ seat, isSelected, mode, toCanvas }) {
+export default function SeatElement({ seat, isSelected, mode, toCanvas, onContextMenu }) {
   const {
     id, type, x, y, width, height, r,
     text, fill, stroke, strokeWidth,
@@ -93,6 +93,14 @@ export default function SeatElement({ seat, isSelected, mode, toCanvas }) {
     window.addEventListener('mouseup', onMouseUp);
   }, [mode, id, groupId, toCanvas, toggleSelection, batchUpdateSeats, pushSnapshot]);
 
+  // ── right-click context menu ─────────────────────────────────────────────
+  const handleContextMenu = useCallback((e) => {
+    if (mode === 'free') return;
+    e.preventDefault();
+    e.stopPropagation();
+    onContextMenu?.(e, id);
+  }, [mode, id, onContextMenu]);
+
   // ── double-click to edit ──────────────────────────────────────────────────
   const handleDoubleClick = useCallback((e) => {
     if (mode === 'free') return;
@@ -141,6 +149,7 @@ export default function SeatElement({ seat, isSelected, mode, toCanvas }) {
           style={{ cursor: notFree ? 'pointer' : 'default' }}
           onMouseDown={handleMouseDown}
           onDoubleClick={handleDoubleClick}
+          onContextMenu={handleContextMenu}
           onClick={e => e.stopPropagation()}
         />
         {editingLabel ? (
@@ -213,6 +222,7 @@ export default function SeatElement({ seat, isSelected, mode, toCanvas }) {
             style={{ cursor: notFree ? 'pointer' : 'default', userSelect: 'none' }}
             onMouseDown={handleMouseDown}
             onDoubleClick={handleDoubleClick}
+            onContextMenu={handleContextMenu}
             onClick={e => e.stopPropagation()}
           >
             {text}
@@ -240,6 +250,7 @@ export default function SeatElement({ seat, isSelected, mode, toCanvas }) {
         style={{ cursor: notFree ? 'pointer' : 'default' }}
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
+        onContextMenu={handleContextMenu}
         onClick={e => e.stopPropagation()}
       />
       {editingLabel ? (

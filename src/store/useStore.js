@@ -177,6 +177,68 @@ export const useStore = create((set, get) => {
       }));
     },
 
+    // ── duplicate ─────────────────────────────────────────
+    duplicateSelected() {
+      const { selectedIds, seats } = get();
+      if (!selectedIds.length) return;
+      pushHistory();
+      const sel = seats.filter(s => selectedIds.includes(s.id));
+      const OFFSET = 24;
+      if (sel.length === 1) {
+        const ns = { ...sel[0], id: crypto.randomUUID(), x: sel[0].x + OFFSET, y: sel[0].y + OFFSET, groupId: null };
+        set(st => ({ seats: [...st.seats, ns], selectedIds: [ns.id] }));
+      } else {
+        const gid = crypto.randomUUID();
+        const nseats = sel.map(s => ({ ...s, id: crypto.randomUUID(), x: s.x + OFFSET, y: s.y + OFFSET, groupId: gid }));
+        set(st => ({
+          seats: [...st.seats, ...nseats],
+          groups: [...st.groups, { id: gid, seatIds: nseats.map(s => s.id) }],
+          selectedIds: nseats.map(s => s.id),
+        }));
+      }
+    },
+
+    // ── custom models ──────────────────────────────────────
+    customModels: (() => {
+      try { return JSON.parse(localStorage.getItem('seatLayoutCustomModels') || '[]'); }
+      catch (_e) { return []; }
+    })(),
+
+    saveCustomModel(name, seats) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      seats.forEach(s => {
+        if (s.type === 'circle') {
+          minX = Math.min(minX, s.x - s.r); minY = Math.min(minY, s.y - s.r);
+          maxX = Math.max(maxX, s.x + s.r); maxY = Math.max(maxY, s.y + s.r);
+        } else {
+          const hw = (s.width || 0) / 2, hh = (s.height || 0) / 2;
+          minX = Math.min(minX, s.x - hw); minY = Math.min(minY, s.y - hh);
+          maxX = Math.max(maxX, s.x + hw); maxY = Math.max(maxY, s.y + hh);
+        }
+      });
+      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+      const normalized = seats.map(s => ({ ...s, x: s.x - cx, y: s.y - cy, groupId: null }));
+      const model = {
+        id: crypto.randomUUID(),
+        name: name.trim() || 'Custom Model',
+        createdAt: Date.now(),
+        seats: normalized,
+      };
+      set(st => {
+        const next = [...st.customModels, model];
+        try { localStorage.setItem('seatLayoutCustomModels', JSON.stringify(next)); } catch (_e) {}
+        return { customModels: next };
+      });
+    },
+
+    deleteCustomModel(id) {
+      set(st => {
+        const next = st.customModels.filter(m => m.id !== id);
+        try { localStorage.setItem('seatLayoutCustomModels', JSON.stringify(next)); } catch (_e) {}
+        return { customModels: next };
+      });
+    },
+
     // ── undo / redo ───────────────────────────────────────
     past: [],
     future: [],

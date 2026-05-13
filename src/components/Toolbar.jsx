@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import BulkCreationOverlay from './BulkCreationOverlay';
 import TemplateOverlay from './TemplateOverlay';
 import LayoutModelsOverlay from './LayoutModelsOverlay';
+import CustomModelsOverlay from './CustomModelsOverlay';
 
 // ── Mode buttons ──────────────────────────────────────────────────────────────
 const MODES = [
@@ -39,6 +40,7 @@ export default function Toolbar() {
   const canGroup     = selectedIds.length >= 2;
   const canUngroup   = seats.some(s => selectedIds.includes(s.id) && s.groupId);
 
+  const customModels = useStore(s => s.customModels);
   const [overlay, setOverlay] = useState(null);
 
   function activateType(typeId) {
@@ -101,6 +103,18 @@ export default function Toolbar() {
 
       <Divider />
 
+      {/* ── Custom Models ── */}
+      <Section>
+        <Btn title="Your saved custom models" onClick={() => setOverlay({ kind: 'custom' })}>
+          <CustomIcon />
+          <span style={s.btnLabel}>
+            Custom{customModels.length > 0 ? ` (${customModels.length})` : ''}
+          </span>
+        </Btn>
+      </Section>
+
+      <Divider />
+
       {/* ── Edit actions ── */}
       <Section>
         <Btn disabled={!canGroup}   title="Group (Ctrl+G)" onClick={groupSelected}>
@@ -141,6 +155,9 @@ export default function Toolbar() {
       )}
       {overlay?.kind === 'layouts' && (
         <LayoutModelsOverlay onClose={() => setOverlay(null)} />
+      )}
+      {overlay?.kind === 'custom' && (
+        <CustomModelsOverlay onClose={() => setOverlay(null)} />
       )}
     </div>
   );
@@ -278,6 +295,13 @@ function LayoutIcon() {
       <line x1="12" y1="16" x2="12" y2="21" />
       <line x1="3" y1="12" x2="8" y2="12" />
       <line x1="16" y1="12" x2="21" y2="12" />
+    </svg>
+  );
+}
+function CustomIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
     </svg>
   );
 }
