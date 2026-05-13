@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import BulkCreationOverlay from './BulkCreationOverlay';
 import TemplateOverlay from './TemplateOverlay';
