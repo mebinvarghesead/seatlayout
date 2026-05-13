@@ -32,6 +32,10 @@ export const useStore = create((set, get) => {
       set({ placementType: type });
     },
 
+    // ── viewport center (updated by Canvas on zoom/pan) ──
+    viewportCenter: { x: 0, y: 0 },
+    setViewportCenter(x, y) { set({ viewportCenter: { x, y } }); },
+
     // ── canvas data ───────────────────────────────────────
     seats: [],
     groups: [],
@@ -90,6 +94,33 @@ export const useStore = create((set, get) => {
         ? state.past.slice(1)
         : state.past;
       set({ past: [...past, snapshot], future: [] });
+    },
+
+    // Bulk add — seats are pre-positioned relative to canvas origin (0,0);
+    // they are offset to viewportCenter automatically.
+    // shouldGroup=true creates a group so the result moves as one unit.
+    addBulkSeats(seats, shouldGroup = false) {
+      const { viewportCenter } = get();
+      pushHistory();
+      const placed = seats.map(s => ({
+        ...s,
+        x: s.x + viewportCenter.x,
+        y: s.y + viewportCenter.y,
+      }));
+      if (shouldGroup && placed.length > 1) {
+        const groupId = crypto.randomUUID();
+        const grouped = placed.map(s => ({ ...s, groupId }));
+        set(st => ({
+          seats:  [...st.seats,  ...grouped],
+          groups: [...st.groups, { id: groupId, seatIds: placed.map(s => s.id) }],
+          selectedIds: placed.map(s => s.id),
+        }));
+      } else {
+        set(st => ({
+          seats:  [...st.seats, ...placed],
+          selectedIds: placed.map(s => s.id),
+        }));
+      }
     },
 
     deleteSeat(id) {
