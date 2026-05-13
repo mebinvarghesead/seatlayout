@@ -99,7 +99,8 @@ export const useStore = create((set, get) => {
     // Bulk add — seats are pre-positioned relative to canvas origin (0,0);
     // they are offset to viewportCenter automatically.
     // shouldGroup=true creates a group so the result moves as one unit.
-    addBulkSeats(seats, shouldGroup = false) {
+    addBulkSeats(seats, shouldGroup) {
+      if (shouldGroup === undefined) shouldGroup = false;
       const { viewportCenter } = get();
       pushHistory();
       const placed = seats.map(s => ({

@@ -33,7 +33,7 @@ function darken(hex) {
     const g = Math.max(0, ((n >> 8)  & 255) - 40);
     const b = Math.max(0, ((n)       & 255) - 40);
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-  } catch { return '#334155'; }
+  } catch (_e) { return '#334155'; }
 }
 
 export const TEMPLATES = [
