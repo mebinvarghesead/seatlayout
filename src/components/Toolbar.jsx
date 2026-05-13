@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import BulkCreationOverlay from './BulkCreationOverlay';
 import TemplateOverlay from './TemplateOverlay';
+import LayoutModelsOverlay from './LayoutModelsOverlay';
 
 // ── Mode buttons ──────────────────────────────────────────────────────────────
 const MODES = [
@@ -90,6 +91,16 @@ export default function Toolbar() {
 
       <Divider />
 
+      {/* ── Layout Models ── */}
+      <Section>
+        <Btn title="Place a full venue layout" onClick={() => setOverlay({ kind: 'layouts' })}>
+          <LayoutIcon />
+          <span style={s.btnLabel}>Layouts</span>
+        </Btn>
+      </Section>
+
+      <Divider />
+
       {/* ── Edit actions ── */}
       <Section>
         <Btn disabled={!canGroup}   title="Group (Ctrl+G)" onClick={groupSelected}>
@@ -127,6 +138,9 @@ export default function Toolbar() {
       )}
       {overlay?.kind === 'template' && (
         <TemplateOverlay onClose={() => setOverlay(null)} />
+      )}
+      {overlay?.kind === 'layouts' && (
+        <LayoutModelsOverlay onClose={() => setOverlay(null)} />
       )}
     </div>
   );
@@ -252,6 +266,18 @@ function TemplateIcon() {
       <rect x="14" y="3" width="7" height="7" rx="1" />
       <rect x="3" y="14" width="7" height="7" rx="1" />
       <path d="M14 17.5h7M17.5 14v7" />
+    </svg>
+  );
+}
+function LayoutIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="4" />
+      <line x1="12" y1="3" x2="12" y2="8" />
+      <line x1="12" y1="16" x2="12" y2="21" />
+      <line x1="3" y1="12" x2="8" y2="12" />
+      <line x1="16" y1="12" x2="21" y2="12" />
     </svg>
   );
 }
