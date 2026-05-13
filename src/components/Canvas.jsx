@@ -62,6 +62,14 @@ export default function Canvas() {
       .on('zoom', event => {
         zoomRef.current = event.transform;
         g.attr('transform', event.transform.toString());
+        if (svgRef.current) {
+          const rect = svgRef.current.getBoundingClientRect();
+          const { x, y, k } = event.transform;
+          useStore.getState().setViewportCenter(
+            (rect.width  / 2 - x) / k,
+            (rect.height / 2 - y) / k,
+          );
+        }
       });
 
     zoomBehaviorRef.current = zoom;
